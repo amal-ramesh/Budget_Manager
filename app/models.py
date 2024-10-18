@@ -5,23 +5,26 @@ from bson import ObjectId
 from typing import List,Optional
 
 class User(BaseModel):
-    id : str = Field(default_factory=lambda: str(ObjectId()), alias="_id")
+    id : str
     username : str
     email : str
     password : str
     two_factor_auth : Optional[bool] = False
 
     class Config:
-        populate_by_name = True                #allow the model to accept alternative field names, particularly when using aliases for fields.
-        json_encoders = {ObjectId:str}
-        json_schema_extra = {
-            "example": {
-                "username": "johndoe",
-                "email": "johndoe@example.com",
-                "password": "strongpassword",
-                "two_factor_enabled": False
-            }
-        }
+        allow_mutation = True
+
+        # class Config:
+    #     populate_by_name = True                #allow the model to accept alternative field names, particularly when using aliases for fields.
+    #     json_encoders = {ObjectId:str}
+    #     json_schema_extra = {
+    #         "example": {
+    #             "username": "johndoe",
+    #             "email": "johndoe@example.com",
+    #             "password": "strongpassword",
+    #             "two_factor_enabled": False
+    #         }
+    #     }
 
 class Budget(BaseModel):
     budget_id : str

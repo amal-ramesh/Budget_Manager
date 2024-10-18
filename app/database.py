@@ -7,3 +7,4 @@ db = client.budget_mangement
 budget_collection = db.budget
 income_collection = db.income
 expense_collection = db.expense
+user_collection = db.user
