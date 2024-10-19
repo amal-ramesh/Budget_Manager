@@ -11,8 +11,8 @@ class User(BaseModel):
     password : str
     two_factor_auth : Optional[bool] = False
 
-    class Config:
-        allow_mutation = True
+    # class Config:
+    #     allow_mutation = True
 
         # class Config:
     #     populate_by_name = True                #allow the model to accept alternative field names, particularly when using aliases for fields.
@@ -67,6 +67,11 @@ class Expense(BaseModel):
     #         }
     #     }
 
+class CategoryLimit(BaseModel):
+    category : str
+    limit : float
+
+
 class Income(BaseModel):
     id : str
     budget_id : str
@@ -85,3 +90,6 @@ class Income(BaseModel):
     #     }
 
 
+class CategorySum(BaseModel):
+    category:str
+    sum:float=0

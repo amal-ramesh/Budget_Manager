@@ -1,6 +1,6 @@
-from app.models import User,Budget,Expense,Income
-from fastapi import APIRouter
-from app.database import budget_collection,income_collection,expense_collection
+from app.models import User,Budget,Expense,Income,CategoryLimit,CategorySum
+from fastapi import APIRouter, HTTPException
+from app.database import budget_collection,income_collection,expense_collection,category_limit_collection,category_sum_collection
 from app.serialization import *
 
 
@@ -24,6 +24,15 @@ async def add_income(income_data:Income):
 
 @budget_router.post("/add_expense")
 async def add_expense(expense_data:Expense):
+    category_limit_list = [doc["limit"] for doc in category_limit_collection.find({"category":expense_data.category}, {"limit": True})]
+    category_limit = sum(category_limit_list)
+
+    category_sum_list = [doc["sum"] for doc in category_sum_collection.find({"category":expense_data.category}, {"sum": True})]
+    category_sum = sum(category_sum_list)
+
+    if expense_data.amount + category_sum > category_limit:
+        raise HTTPException(status_code=400, detail="Category limit exceeded")
+    
     expense_collection.insert_one(expense_data.dict())
     budget_id = expense_data.budget_id
     budget_id_list = [doc["budget_id"] for doc in budget_collection.find({}, {"budget_id": True})]
@@ -33,6 +42,13 @@ async def add_expense(expense_data:Expense):
     curr_category_list = budget_collection.find({"budget_id":budget_id},{"expenses":True})
     if expense_data.category not in curr_category_list:
         budget_collection.find_one_and_update({"budget_id":budget_id},{"$push":{"expenses":expense_data.category}})
+
+    category_sum_collection.update_one(
+        {"category": expense_data.category},
+        {"$inc": {"sum": expense_data.amount}},
+        upsert=True
+    )
+
 
     return {"Message":"Expense added successfully"}
 
@@ -99,3 +115,12 @@ async def budget_summary(given_budget_id:str):
         "Total Expense":tot_expense,
         "Balance Amount":balance
     }
+
+@budget_router.post("/category_limit")
+async def add_category_limit(category_data:CategoryLimit):
+    category_limit_collection.update_one(
+        {"category": category_data.category},
+        {"$set": {"limit": category_data.limit}},
+        upsert=True
+    )
+    return {"message": f"Limit set for {category_data.category}"}
