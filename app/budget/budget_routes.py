@@ -1,5 +1,7 @@
+from bson import ObjectId
+
 from app.models import User,Budget,Expense,Income,CategoryLimit,CategorySum
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.database import budget_collection,income_collection,expense_collection,category_limit_collection,category_sum_collection
 from app.serialization import *
 
@@ -24,8 +26,15 @@ async def add_income(income_data:Income):
 
 @budget_router.post("/add_expense")
 async def add_expense(expense_data:Expense):
-    category_limit_list = [doc["limit"] for doc in category_limit_collection.find({"category":expense_data.category}, {"limit": True})]
-    category_limit = sum(category_limit_list)
+
+    categories = [doc["category"] for doc in category_limit_collection.find({}, {"category": True})]
+
+    if expense_data.category in categories:
+        category_limit_list = [doc["limit"] for doc in category_limit_collection.find({"category":expense_data.category}, {"limit": True})]
+        category_limit = sum(category_limit_list)
+
+    else:
+        category_limit = float("inf")
 
     category_sum_list = [doc["sum"] for doc in category_sum_collection.find({"category":expense_data.category}, {"sum": True})]
     category_sum = sum(category_sum_list)
@@ -53,16 +62,30 @@ async def add_expense(expense_data:Expense):
     return {"Message":"Expense added successfully"}
 
 
+@budget_router.get("/all_budget")
+async def view_all_budget():
+    budget_list = list_serial_budget(budget_collection.find())
+    return budget_list
+
 
 # @budget_router.get("/show_budget/{month}")
 # async def show_budget_with_month(month:str):
 #     budget_req = list_serial_budget(budget_collection.find_one({"month":month}))
 #     return budget_req
 
-@budget_router.get("/budget")
-async def view_budget():
-    budget_list = list_serial_budget(budget_collection.find())
-    return budget_list
+@budget_router.get("/budget_by_id")
+async def view_budget_by_id(budget_id:str):
+    # budget_list = list_serial_budget(budget_collection.find())
+    # return budget_list
+    budget_req = budget_collection.find_one({"budget_id":budget_id})
+
+    if not budget_req:
+        raise HTTPException(status_code=404 , detail="Budget ID Invalid")
+
+    if "_id" in budget_req:
+        budget_req["_id"] = str(budget_req["_id"])
+
+    return budget_req
 
 
 
@@ -105,6 +128,8 @@ async def budget_summary(given_budget_id:str):
     tot_income_list = [doc["total_income"] for doc in budget_collection.find({"budget_id":given_budget_id}, {"total_income": True})]
     tot_income = sum(tot_income_list)
 
+
+
     tot_expense_list = [doc["total_expense"] for doc in budget_collection.find({"budget_id": given_budget_id}, {"total_expense": True})]
     tot_expense = sum(tot_expense_list)
 
@@ -124,3 +149,11 @@ async def add_category_limit(category_data:CategoryLimit):
         upsert=True
     )
     return {"message": f"Limit set for {category_data.category}"}
+
+
+
+async def example():
+    return{"example"}
+@budget_router.get("/depends")
+async def demo(demo : str = Depends(example)):
+    return {"Hello":demo}

@@ -21,7 +21,7 @@ def individual_serializer_budget(budget) -> dict:
         "Month" : str(budget["month"]),
         "Total Income" : str(budget["total_income"]),
         "Total Expense" : str(budget["total_expense"]),
-        "Expenses" : list[budget["expenses"]]
+        "Expenses" : budget["expenses"]
     }
 
 def list_serial_budget(budgets) -> list:
