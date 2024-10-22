@@ -93,3 +93,7 @@ class Income(BaseModel):
 class CategorySum(BaseModel):
     category:str
     sum:float=0
+
+
+# class Notification(BaseModel):
+#     notification_type : str = "Important"
