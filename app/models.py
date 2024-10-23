@@ -1,15 +1,27 @@
 #Creating models for User , Expense and Budget
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from bson import ObjectId
 from typing import List,Optional
 
+# class User(BaseModel):
+#     id : str
+#     username : str
+#     email : str
+#     password : str
+#     two_factor_auth : Optional[bool] = False
+
+
 class User(BaseModel):
-    id : str
-    username : str
-    email : str
-    password : str
-    two_factor_auth : Optional[bool] = False
+    username: str
+    email: EmailStr
+    password: str
+    two_factor_enabled: bool = False
+
+class UserInDB(User):
+    hashed_password: str
+
+
 
     # class Config:
     #     allow_mutation = True
