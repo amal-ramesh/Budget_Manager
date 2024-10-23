@@ -12,8 +12,6 @@ from app.schema import Tags
 
 router = APIRouter()
 
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 login_data_temp_storage = []
 
 # Register new user
