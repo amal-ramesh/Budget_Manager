@@ -1,8 +1,9 @@
 #Creating models for User , Expense and Budget
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, validator
 from bson import ObjectId
-from typing import List,Optional
+from typing import List, Optional, Literal
+
 
 # class User(BaseModel):
 #     id : str
@@ -46,6 +47,11 @@ class Budget(BaseModel):
     total_income : float
     total_expense : float = 0
     expenses : List[str] = []
+    important : bool = False
+
+    @validator('month')
+    def convert_month_to_lowercase(cls, v):
+        return v.lower()
 
     # class Config:
     #     # populate_by_name = True

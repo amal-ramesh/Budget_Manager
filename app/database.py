@@ -10,3 +10,4 @@ expense_collection = db.expense
 user_collection = db.user
 category_limit_collection = db.category_limit
 category_sum_collection = db.category_sum
+login_token_collection = db.login_token

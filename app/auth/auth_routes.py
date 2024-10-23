@@ -1,38 +1,17 @@
-# from fastapi import APIRouter,Depends,HTTPException,status
-# from app.auth.authorise import create_access_token
-# from app.auth.hashing import Hash
-# from app.database import user_collection
-# from app.models import User
-#
-#
-# auth_router = APIRouter()
-# @auth_router.post("/register")
-# async def register(user_data:User):
-#     hashed_password = Hash.bcrypt(user_data.password)
-#     user_data.password = hashed_password
-#     user_collection.insert_one(user_data.dict())
-#     return {"Message":"User Registered Successfully !"}
-#
-# @auth_router.post("/login")
-# async def login(username:str , password:str):
-#     user = user_collection.find_one({"username":username})
-#     if not user or not Hash.verify(user["password"],password):
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid Credentials")
-#     access_token = create_access_token(data={"sub":user["username"]})
-#     return {"Access Token":access_token,"Token Type":"bearer"}
-
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from app.auth.authorise import create_access_token, blacklist_token, verify_password, get_password_hash, verify_token
 from app.schema import Token, RegisterSchema, LoginSchema
 from app.models import User, UserInDB
-from app.database import user_collection
+from app.database import user_collection,login_token_collection
 from bson import ObjectId
 from pymongo.errors import DuplicateKeyError
+from app.auth.authorise import blacklist
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 # Register new user
@@ -77,12 +56,20 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     # Create a JWT token for the user
     access_token = create_access_token(data={"sub": user["username"]})
+    login_token_collection.insert_one({"token": access_token, "username": user["username"]})
 
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# Logout route
 @router.post("/logout")
-async def logout(token: str = Depends(verify_token)):
+async def logout(token: str):
+    login_token_list = [doc["token"] for doc in login_token_collection.find({}, {"token": True})]
+    print(login_token_list)
+    if token not in login_token_list:
+        return {"Message":"Such a token do not exist"}
+    elif token in blacklist:
+        return {"message":"Already used token"}
     blacklist_token(token)  # Blacklist the current token
+    login_token_collection.delete_many({"token":token})
     return {"message": "Successfully logged out"}
+

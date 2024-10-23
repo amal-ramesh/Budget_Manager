@@ -1,3 +1,5 @@
+from typing import Literal
+
 from bson import ObjectId
 
 from app.models import User,Budget,Expense,Income,CategoryLimit,CategorySum
@@ -100,7 +102,7 @@ async def category_details(given_category:str):
 #Monthly report which contains Total income of the month and total expense of the month
 
 @budget_router.get("/monthly_report")
-async def monthly_report(given_month:str):
+async def monthly_report(given_month:Literal["january","february","march","april","may","june","july","august","september","october","november","december"]):
     income_list = [doc["total_income"] for doc in budget_collection.find({"month":given_month}, {"total_income": True})]
     total_income_monthly = sum(income_list)
 
@@ -150,10 +152,8 @@ async def add_category_limit(category_data:CategoryLimit):
     )
     return {"message": f"Limit set for {category_data.category}"}
 
+@budget_router.get("/important_notification")
+async def get_important_budgets():
+    important_budgets = list_serial_budget(budget_collection.find({"important":True}))
+    return important_budgets
 
-
-async def example():
-    return{"example"}
-@budget_router.get("/depends")
-async def demo(demo : str = Depends(example)):
-    return {"Hello":demo}
