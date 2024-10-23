@@ -73,11 +73,6 @@ async def view_all_budget():
     return budget_list
 
 
-# @budget_router.get("/show_budget/{month}")
-# async def show_budget_with_month(month:str):
-#     budget_req = list_serial_budget(budget_collection.find_one({"month":month}))
-#     return budget_req
-
 @budget_router.get("/budget_by_id",tags=[Tags.budgets])
 async def view_budget_by_id(budget_id:str):
     # budget_list = list_serial_budget(budget_collection.find())
@@ -160,7 +155,7 @@ async def get_important_budgets():
     important_budgets = list_serial_budget(budget_collection.find({"important":True}))
     return important_budgets
 
-@budget_router.post("/edit_email",tags=[Tags.profile])
+@budget_router.put("/edit_email",tags=[Tags.profile])
 async def edit_email_address(user_name:str,new_email:str):
     user_collection.update_one({"username":user_name},{"$set":{"email":new_email}})
     return {"Message":"E-mail edited successfully !"}
