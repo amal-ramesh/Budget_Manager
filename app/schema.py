@@ -1,3 +1,5 @@
+from enum import Enum
+
 from pydantic import BaseModel
 
 class Token(BaseModel):
@@ -15,3 +17,14 @@ class RegisterSchema(BaseModel):
     username: str
     email: str
     password: str
+
+
+class Tags(Enum):
+    budgets = "Budgets"
+    users = "Users"
+    income = "Income"
+    expense = "Expense"
+    category = "Category"
+    report = "Report"
+    starred = "Important(Starred)"
+    profile = "Profile"

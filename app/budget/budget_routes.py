@@ -1,23 +1,26 @@
+from enum import Enum
 from typing import Literal
 
 from bson import ObjectId
 
 from app.models import User,Budget,Expense,Income,CategoryLimit,CategorySum
 from fastapi import APIRouter, HTTPException, Depends
-from app.database import budget_collection,income_collection,expense_collection,category_limit_collection,category_sum_collection
+from app.database import budget_collection,income_collection,expense_collection,category_limit_collection,category_sum_collection,user_collection
 from app.serialization import *
-
+from app.schema import Tags
 
 
 budget_router = APIRouter()
 
-@budget_router.post("/create_budget")
+
+
+@budget_router.post("/create_budget",tags=[Tags.budgets])
 async def create_budget_new(budget_data : Budget):
     budget_collection.insert_one(dict(budget_data))
     return {"Message":"Budget added successfully !"}
 
 
-@budget_router.post("/add_income")
+@budget_router.post("/add_income",tags=[Tags.income])
 async def add_income(income_data:Income):
     income_collection.insert_one(income_data.dict())
     budget_id = income_data.budget_id
@@ -26,7 +29,7 @@ async def add_income(income_data:Income):
         budget_collection.find_one_and_update({"budget_id":budget_id},{"$inc":{"total_income":income_data.amount}})
     return {"Message":"Income added successfully"}
 
-@budget_router.post("/add_expense")
+@budget_router.post("/add_expense",tags=[Tags.expense])
 async def add_expense(expense_data:Expense):
 
     categories = [doc["category"] for doc in category_limit_collection.find({}, {"category": True})]
@@ -64,7 +67,7 @@ async def add_expense(expense_data:Expense):
     return {"Message":"Expense added successfully"}
 
 
-@budget_router.get("/all_budget")
+@budget_router.get("/all_budget",tags=[Tags.budgets])
 async def view_all_budget():
     budget_list = list_serial_budget(budget_collection.find())
     return budget_list
@@ -75,7 +78,7 @@ async def view_all_budget():
 #     budget_req = list_serial_budget(budget_collection.find_one({"month":month}))
 #     return budget_req
 
-@budget_router.get("/budget_by_id")
+@budget_router.get("/budget_by_id",tags=[Tags.budgets])
 async def view_budget_by_id(budget_id:str):
     # budget_list = list_serial_budget(budget_collection.find())
     # return budget_list
@@ -93,7 +96,7 @@ async def view_budget_by_id(budget_id:str):
 
 #Category wise expense
 
-@budget_router.get("/category")
+@budget_router.get("/category",tags=[Tags.category])
 async def category_details(given_category:str):
     expense_list = [doc["amount"] for doc in expense_collection.find({"category":given_category}, {"amount": True})]
     total_expense = sum(expense_list)
@@ -101,7 +104,7 @@ async def category_details(given_category:str):
 
 #Monthly report which contains Total income of the month and total expense of the month
 
-@budget_router.get("/monthly_report")
+@budget_router.get("/monthly_report",tags=[Tags.report])
 async def monthly_report(given_month:Literal["january","february","march","april","may","june","july","august","september","october","november","december"]):
     income_list = [doc["total_income"] for doc in budget_collection.find({"month":given_month}, {"total_income": True})]
     total_income_monthly = sum(income_list)
@@ -121,7 +124,7 @@ async def monthly_report(given_month:Literal["january","february","march","april
 
 #To show total income , total expense and Balance amount of a budget
 
-@budget_router.get("/budget_summary")
+@budget_router.get("/budget_summary",tags=[Tags.budgets])
 async def budget_summary(given_budget_id:str):
     # tot_income =  budget_collection.find_one({"budget_id":given_budget_id},{"total_income":True})
     # tot_expense = budget_collection.find_one({"budget_id":given_budget_id},{"total_expense":True})
@@ -143,7 +146,7 @@ async def budget_summary(given_budget_id:str):
         "Balance Amount":balance
     }
 
-@budget_router.post("/category_limit")
+@budget_router.post("/category_limit",tags=[Tags.category])
 async def add_category_limit(category_data:CategoryLimit):
     category_limit_collection.update_one(
         {"category": category_data.category},
@@ -152,8 +155,12 @@ async def add_category_limit(category_data:CategoryLimit):
     )
     return {"message": f"Limit set for {category_data.category}"}
 
-@budget_router.get("/important_notification")
+@budget_router.get("/important_notification",tags=[Tags.starred])
 async def get_important_budgets():
     important_budgets = list_serial_budget(budget_collection.find({"important":True}))
     return important_budgets
 
+@budget_router.post("/edit_email",tags=[Tags.profile])
+async def edit_email_address(user_name:str,new_email:str):
+    user_collection.update_one({"username":user_name},{"$set":{"email":new_email}})
+    return {"Message":"E-mail edited successfully !"}
