@@ -56,7 +56,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     # Create a JWT token for the user
     access_token = create_access_token(data={"sub": user["username"]})
-    # login_token_collection.insert_one({"token": access_token, "username": user["username"]})
     login_data_temp_storage.append(access_token)
 
     return {"access_token": access_token, "token_type": "bearer"}
@@ -64,8 +63,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @router.post("/logout",tags=[Tags.users])
 async def logout(token: str):
-    # login_token_list = [doc["token"] for doc in login_token_collection.find({}, {"token": True})]
-    # print(login_token_list)
     if token not in login_data_temp_storage:
         return {"Message":"Such a token do not exist"}
     elif token in blacklist:

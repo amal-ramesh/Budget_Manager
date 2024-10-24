@@ -1,100 +1,8 @@
-# import pytest
-# from fastapi.testclient import TestClient
-# from app.main import app
-# from app.auth.authorise import create_access_token, verify_token
-# from app.database import user_collection
-#
-# client = TestClient(app)
-#
-# # Demo data created
-# test_user = {
-#     "username": "testuser",
-#     "email": "testuser@gmail.com",
-#     "password": "testpassword",
-#     "two_factor_enabled": False
-# }
-#
-# @pytest.fixture(autouse=True)
-# def setup_and_teardown():
-#     # To remove test data before running
-#     user_collection.delete_many({"email": test_user["email"]})
-#
-#     # To remove test data after running
-#     yield
-#     user_collection.delete_many({"email": test_user["email"]})
-#
-#
-# # Test User Registration
-# def test_register_user():
-#     response = client.post("/auth/register", json=test_user)
-#     assert response.status_code == 201  # User created successfully
-#     assert response.json()["message"] == "User created successfully"
-#
-#
-# # Test User Login
-# def test_login_user():
-#     # First, register the user
-#     client.post("/auth/register", json=test_user)
-#
-#     # Now login with the registered user
-#     login_data = {
-#         "username": test_user["username"],
-#         "password": test_user["password"]
-#     }
-#     response = client.post("/auth/login", data=login_data)
-#     assert response.status_code == 200  # Successful login
-#     json_response = response.json()
-#     assert "access_token" in json_response  # Token is returned
-#
-#     # Verify token
-#     token = json_response["access_token"]
-#     decoded_token = verify_token(token)
-#     assert decoded_token is not None  # Token should be valid
-#
-#
-# # Test User Logout
-# def test_logout_user():
-#     # First, register the user
-#     client.post("/auth/register", json=test_user)
-#
-#     # Login to get the token
-#     login_data = {
-#         "username": test_user["username"],
-#         "password": test_user["password"]
-#     }
-#     login_response = client.post("/auth/login", data=login_data)
-#     token = login_response.json()["access_token"]
-#
-#     # Logout with the token
-#     headers = {"Authorization": f"Bearer {token}"}
-#     logout_response = client.post("/auth/logout", headers=headers)
-#
-#     assert logout_response.status_code == 200
-#     assert logout_response.json() == {"message": "Successfully logged out"}
-#
-#     # Try logging out again with the same token (should be blacklisted)
-#     second_logout_response = client.post("/auth/logout", headers=headers)
-#     assert second_logout_response.status_code == 401
-#     assert second_logout_response.json()["detail"] == "Invalid token"
-#
-#
-# # Test Invalid Login Attempt
-# def test_invalid_login():
-#     # Try logging in with wrong credentials
-#     login_data = {
-#         "username": "wronguser",
-#         "password": "wrongpassword"
-#     }
-#     response = client.post("/auth/login", data=login_data)
-#     assert response.status_code == 401
-#     assert response.json()["detail"] == "Incorrect username or password"
-
-
 
 from fastapi.testclient import TestClient
 from app.main import app
 import pytest
-from app.database import user_collection
+from app.database import user_collection,budget_collection,income_collection,expense_collection
 
 
 
@@ -104,10 +12,17 @@ client = TestClient(app)
 def setup_and_teardown():
     # To remove test data before running
     user_collection.delete_many({"email": test_user["email"]})
+    budget_collection.delete_many({"budget_id":test_budget["budget_id"]})
+    income_collection.delete_many({"id":test_income["id"]})
+    expense_collection.delete_many({"id":test_expense["id"]})
+
 
     # To remove test data after running
     yield
     user_collection.delete_many({"email": test_user["email"]})
+    budget_collection.delete_many({"budget_id": test_budget["budget_id"]})
+    income_collection.delete_many({"id": test_income["id"]})
+    expense_collection.delete_many({"id": test_expense["id"]})
 
 # Sample user data for tests
 test_user = {
@@ -117,51 +32,25 @@ test_user = {
 }
 
 def test_register_user():
-    # Test registering a new user
     response = client.post("/register", json=test_user)
-    assert response.status_code == 200  # Success when registering
+    assert response.status_code == 200
     json_response = response.json()
-    assert "access_token" in json_response  # JWT token should be in response
-    assert json_response["token_type"] == "bearer"  # Token type should be bearer
+    assert "access_token" in json_response
+    assert json_response["token_type"] == "bearer"
 
 
 def test_login_user():
-    # First, register the user
     client.post("/register", json=test_user)
 
-    # Now login with the registered user
     login_data = {
         "username": test_user["username"],
         "password": test_user["password"]
     }
     response = client.post("/login", data=login_data)
-    assert response.status_code == 200  # Successful login
+    assert response.status_code == 200
     json_response = response.json()
-    assert "access_token" in json_response  # JWT token should be in response
-    assert json_response["token_type"] == "bearer"  # Token type should be bearer
-
-    # Save the token for use in the logout test
-    global access_token
-    access_token = json_response["access_token"]
-
-
-# def test_logout_user():
-#     # First, register and log in the user to get the token
-#     client.post("/register", json=test_user)
-#     login_data = {
-#         "username": test_user["username"],
-#         "password": test_user["password"]
-#     }
-#     login_response = client.post("/login", data=login_data)
-#     access_token = login_response.json()["access_token"]
-#
-#     # Now test the logout with the token
-#     # response = client.post("/logout", json={"token": access_token})
-#     response = client.post("/logout", data = access_token)
-#
-#     assert response.status_code == 200  # Successful logout
-#     # json_response = response.json()
-#     assert response.json() == {"message" : "Successfully logged out"}
+    assert "access_token" in json_response
+    assert json_response["token_type"] == "bearer"
 
 
 def test_logout_user():
@@ -191,4 +80,49 @@ def test_invalid_login():
     assert response.status_code == 401  # Unauthorized
     json_response = response.json()
     assert json_response["detail"] == "Incorrect username or password"
+
+
+test_budget = {
+    "budget_id" : "testbudgetid",
+    "user_id" : "testuserid",
+    "name" : "testbugetname",
+    "month" : "january",
+    "total_income" : 1000,
+    "total_expense" : 200,
+    "expenses" : ["food"],
+    "important" : False
+}
+
+
+test_income = {
+    "id" : "testincomeid",
+    "budget_id" : "testbudgetid",
+    "amount" : 500,
+    "description" : "testdescriptionofincome"
+}
+
+test_expense = {
+    "id" : "testexpenseid",
+    "budget_id" : "testbudgetid",
+    "amount" : 100,
+    "category" : "food"
+}
+def test_create_budget():
+    response = client.post("/create_budget",json=test_budget)
+    assert response.status_code == 200
+    assert response.json() == {"Message":"Budget added successfully !"}
+
+def test_add_income():
+    client.post("/create_budget", json=test_budget)      #because each time it get deleteted
+    response = client.post("/add_income",json=test_income)
+    assert response.status_code == 200
+    assert response.json() == {"Message":"Income added successfully"}
+
+def test_add_expense():
+    client.post("/create_budget", json=test_budget)
+    client.post("/add_income",json=test_income)
+
+    response = client.post("/add_expense",json=test_expense)
+    assert response.status_code == 200
+    assert response.json() == {"Message":"Expense added successfully"}
 
