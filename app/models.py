@@ -24,6 +24,7 @@ class Budget(BaseModel):
     total_expense : float = 0
     expenses : List[str] = []
     important : bool = False
+    owner: Optional[str] = None
 
     @validator('month')
     def convert_month_to_lowercase(cls, v):
