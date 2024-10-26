@@ -203,10 +203,12 @@ async def delete_income(given_income_id:str):
         old_income_list = [doc["amount"] for doc in income_collection.find({"id": given_income_id}, {"amount": True})]
         old_income = sum(old_income_list)
 
-        income_collection.delete_one({"id":given_income_id})
 
         budget_id_list = [doc["budget_id"] for doc in income_collection.find({"id":given_income_id},{"budget_id":True})]
         budget_id = budget_id_list[0]
+
+        income_collection.delete_one({"id":given_income_id})
+
 
         budget_collection.update_one({"budget_id":budget_id},{"$inc":{"total_income":-old_income}})
 

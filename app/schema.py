@@ -1,6 +1,7 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+
 
 class Token(BaseModel):
     access_token: str
@@ -15,7 +16,7 @@ class LoginSchema(BaseModel):
 
 class RegisterSchema(BaseModel):
     username: str
-    email: str
+    email: EmailStr
     password: str
 
 
