@@ -1,4 +1,4 @@
-
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
@@ -9,6 +9,7 @@ from app.database import user_collection
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # Secret key and algorithm for JWT
 SECRET_KEY = "your_secret_key"
@@ -28,7 +29,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 # Verify JWT token
-def verify_token(token: str):
+def verify_token(token: str=Depends(oauth2_scheme)):
     if token in blacklist:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

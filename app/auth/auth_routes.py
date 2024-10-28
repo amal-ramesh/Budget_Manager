@@ -1,7 +1,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from app.auth.authorise import create_access_token, blacklist_token, verify_password, get_password_hash, verify_token
+from jose import jwt
+
+from app.auth.authorise import create_access_token, blacklist_token, verify_password, get_password_hash, verify_token, \
+    oauth2_scheme
 from app.schema import Token, RegisterSchema, LoginSchema
 from app.models import User, UserInDB
 from app.database import user_collection,login_token_collection
@@ -13,6 +16,7 @@ from app.schema import Tags
 router = APIRouter()
 
 login_data_temp_storage = []
+
 
 # Register new user
 @router.post("/register", response_model=Token,tags=[Tags.users])
@@ -43,7 +47,6 @@ async def register(user: RegisterSchema):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# Login route
 @router.post("/login", response_model=Token,tags=[Tags.users])
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = user_collection.find_one({"username": form_data.username})
@@ -62,7 +65,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @router.post("/logout",tags=[Tags.users])
-async def logout(token: str):
+async def logout(token: str=Depends(oauth2_scheme)):
     if token not in login_data_temp_storage:
         return {"Message":"Such a token do not exist"}
     elif token in blacklist:
