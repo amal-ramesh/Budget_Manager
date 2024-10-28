@@ -36,6 +36,7 @@ class Expense(BaseModel):
     budget_id : str
     amount : float
     category : str
+    owner : Optional[str] = None
 
 
 class CategoryLimit(BaseModel):
@@ -48,6 +49,7 @@ class Income(BaseModel):
     budget_id : str
     amount : float
     description : str
+    owner: Optional[str] = None
 
 
 class CategorySum(BaseModel):

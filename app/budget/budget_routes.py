@@ -25,6 +25,7 @@ async def create_budget_new(budget_data : Budget,user:dict=Depends(verify_token)
 
 @budget_router.post("/add_income",tags=[Tags.income])
 async def add_income(income_data:Income,user:dict=Depends(verify_token)):       #new change
+    income_data.owner = user["sub"]
     #new change
     budget = budget_collection.find_one({"budget_id": income_data.budget_id, "owner": user["sub"]})
     if not budget:
@@ -39,6 +40,7 @@ async def add_income(income_data:Income,user:dict=Depends(verify_token)):       
 
 @budget_router.post("/add_expense",tags=[Tags.expense])
 async def add_expense(expense_data:Expense,user: dict = Depends(verify_token)):
+    expense_data.owner = user["sub"]
     budget = budget_collection.find_one({"budget_id": expense_data.budget_id, "owner": user["sub"]})
     if not budget:
         raise HTTPException(status_code=403, detail="Access denied for this budget")
@@ -115,7 +117,7 @@ async def monthly_report(given_month:Literal["january","february","march","april
     income_list = [doc["total_income"] for doc in budget_collection.find({"month":given_month,"owner": user["sub"]}, {"total_income": True})]
     total_income_monthly = sum(income_list)
 
-    expense_list = [doc["total_expense"] for doc in budget_collection.find({"month": given_month}, {"total_expense": True})]
+    expense_list = [doc["total_expense"] for doc in budget_collection.find({"month": given_month,"owner":user["sub"]}, {"total_expense": True})]
     total_expense_monthly = sum(expense_list)
 
     # return {f"""#### Summary of {given_month} ####
@@ -181,7 +183,7 @@ async def view_all_income(given_budget_id:str,user: dict = Depends(verify_token)
     if not budget:
         raise HTTPException(status_code=403, detail="Access denied for this budget")
 
-    all_income = [doc["amount"] for doc in income_collection.find({"budget_id":given_budget_id,"owner": user["sub"]},{"amount":True})]
+    all_income = [doc["amount"] for doc in income_collection.find({"budget_id":given_budget_id,"owner":user["sub"]},{"amount":True})]
     return all_income
 
 #update an already added income
