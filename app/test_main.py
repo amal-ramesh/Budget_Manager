@@ -52,6 +52,7 @@ def test_login_user():
     assert json_response["token_type"] == "bearer"
     # global access_token
     access_token = response.json()["access_token"]
+    return access_token
 
 
 
@@ -120,23 +121,21 @@ def test_create_budget():
 
     test_budget["owner"] = test_user["username"]
 
-    #Authorization: Bearer <token>
-
-    response = client.post(f"/create_budget?token={access_token}",json=test_budget)
+    response = client.post(f"/create_budget?token={test_login_user()}",json=test_budget)
     assert response.status_code == 200
     # assert response.json() == {"Message":"Budget added successfully !"}
 
 def test_add_income():
-    client.post("/create_budget", json=test_budget)      #because each time it get deleteted
-    response = client.post("/add_income",json=test_income)
+    client.post(f"/create_budget?token={test_login_user()}", json=test_budget)      #because each time it get deleteted
+    response = client.post(f"/add_income?token={test_login_user()}",json=test_income)
     assert response.status_code == 200
     # assert response.json() == {"Message":"Income added successfully"}
 
 def test_add_expense():
-    client.post("/create_budget", json=test_budget)
-    client.post("/add_income",json=test_income)
+    client.post(f"/create_budget?token={test_login_user()}", json=test_budget)
+    client.post(f"/add_income?token={test_login_user()}",json=test_income)
 
-    response = client.post("/add_expense",json=test_expense)
+    response = client.post(f"/add_expense?token={test_login_user()}",json=test_expense)
     assert response.status_code == 200
     # assert response.json() == {"Message":"Expense added successfully"}
 
