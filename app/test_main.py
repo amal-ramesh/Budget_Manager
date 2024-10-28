@@ -123,13 +123,13 @@ def test_create_budget():
 
     response = client.post(f"/create_budget?token={test_login_user()}",json=test_budget)
     assert response.status_code == 200
-    # assert response.json() == {"Message":"Budget added successfully !"}
+    assert response.json() == {"Message":"Budget added successfully !"}
 
 def test_add_income():
     client.post(f"/create_budget?token={test_login_user()}", json=test_budget)      #because each time it get deleteted
     response = client.post(f"/add_income?token={test_login_user()}",json=test_income)
     assert response.status_code == 200
-    # assert response.json() == {"Message":"Income added successfully"}
+    assert response.json() == {"Message":"Income added successfully"}
 
 def test_add_expense():
     client.post(f"/create_budget?token={test_login_user()}", json=test_budget)
@@ -137,5 +137,5 @@ def test_add_expense():
 
     response = client.post(f"/add_expense?token={test_login_user()}",json=test_expense)
     assert response.status_code == 200
-    # assert response.json() == {"Message":"Expense added successfully"}
+    assert response.json() == {"Message":"Expense added successfully"}
 
