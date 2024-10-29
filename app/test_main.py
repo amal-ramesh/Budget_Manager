@@ -23,6 +23,20 @@ def setup_and_teardown():
     income_collection.delete_many({"id": test_income["id"]})
     expense_collection.delete_many({"id": test_expense["id"]})
 
+@pytest.fixture
+def auth_token():
+    # Register user and get token for authentication
+    client.post("/register", json=test_user)
+    login_data = {
+        "username": test_user["username"],
+        "password": test_user["password"]
+    }
+    login_response = client.post("/login", data=login_data)
+    access_token = login_response.json().get("access_token")
+    assert access_token is not None, "Login failed, no access token returned."
+    return access_token
+
+
 # Sample user data for tests
 test_user = {
     "username": "testuser",
@@ -67,7 +81,7 @@ def test_logout_user():
     access_token = login_response.json()["access_token"]
 
     # Now test the logout by passing the token as a query parameter
-    response = client.post(f"/logout?token={access_token}")
+    response = client.post(f"/logout",headers={"Authorization": f"Bearer {access_token}"})
 
     assert response.status_code == 200  # Successful logout
     assert response.json() == {"message": "Successfully logged out"}
@@ -111,31 +125,31 @@ test_expense = {
     "amount" : 100,
     "category" : "food"
 }
-def test_create_budget():
-    client.post("/register", json=test_user)
-    login_data = {
-        "username": test_user["username"],
-        "password": test_user["password"]
-    }
-    client.post("/login", data=login_data)
+def test_create_budget(auth_token):
+    # client.post("/register", json=test_user)
+    # login_data = {
+    #     "username": test_user["username"],
+    #     "password": test_user["password"]
+    # }
+    # client.post("/login", data=login_data)
 
     test_budget["owner"] = test_user["username"]
 
-    response = client.post(f"/create_budget?token={test_login_user()}",json=test_budget)
+    response = client.post("/create_budget",json=test_budget,headers={"Authorization": f"Bearer {auth_token}"})
     assert response.status_code == 200
     assert response.json() == {"Message":"Budget added successfully !"}
 
-def test_add_income():
-    client.post(f"/create_budget?token={test_login_user()}", json=test_budget)      #because each time it get deleteted
-    response = client.post(f"/add_income?token={test_login_user()}",json=test_income)
+def test_add_income(auth_token):
+    client.post("/create_budget", json=test_budget,headers={"Authorization": f"Bearer {auth_token}"})
+    response = client.post("/add_income",json=test_income,headers={"Authorization": f"Bearer {auth_token}"})
     assert response.status_code == 200
     assert response.json() == {"Message":"Income added successfully"}
 
-def test_add_expense():
-    client.post(f"/create_budget?token={test_login_user()}", json=test_budget)
-    client.post(f"/add_income?token={test_login_user()}",json=test_income)
+def test_add_expense(auth_token):
+    client.post("/create_budget", json=test_budget,headers={"Authorization": f"Bearer {auth_token}"})
+    client.post("/add_income",json=test_income,headers={"Authorization": f"Bearer {auth_token}"})
 
-    response = client.post(f"/add_expense?token={test_login_user()}",json=test_expense)
+    response = client.post("/add_expense",json=test_expense,headers={"Authorization": f"Bearer {auth_token}"})
     assert response.status_code == 200
     assert response.json() == {"Message":"Expense added successfully"}
 
