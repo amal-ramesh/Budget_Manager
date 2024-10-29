@@ -126,12 +126,6 @@ test_expense = {
     "category" : "food"
 }
 def test_create_budget(auth_token):
-    # client.post("/register", json=test_user)
-    # login_data = {
-    #     "username": test_user["username"],
-    #     "password": test_user["password"]
-    # }
-    # client.post("/login", data=login_data)
 
     test_budget["owner"] = test_user["username"]
 
